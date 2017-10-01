@@ -89,6 +89,12 @@ namespace FlappyBot
                     Flap();
                 }
             }
+
+            /* No more cheating! */
+            if(Position.Y < 0.0f)
+            {
+                Kill();
+            }
             
             _prevMouseState = Mouse.GetState();
         }
