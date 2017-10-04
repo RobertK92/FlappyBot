@@ -32,11 +32,11 @@ namespace FlappyBot
             {
                 Parts[i].Parent = this;
                 Parts[i].DrawOrder = _drawOrder;
-                Parts[i].Scale = Vector2.One * Constants.Scale;
+                Parts[i].Scale = Vector2.One * (Constants.Scale + 0.1f);
                 Parts[i].Position = Parts[i].Parent.Position + new Vector2(
                     (Parts[i].Size.X / 2) + i * Parts[i].Size.X,
                     Parts[i].Size.Y / 2);
-                Parts[i].EnablePhysicsRectangle(FarseerPhysics.Dynamics.BodyType.Static, Parts[i].Bounds);
+                Parts[i].EnablePhysicsRectangle(FarseerPhysics.Dynamics.BodyType.Static, Parts[i].Bounds);   
             }
         }
 
@@ -44,7 +44,7 @@ namespace FlappyBot
         {
             foreach(Sprite part in Parts)
             {
-                if(part.Position.X < _camera.Position.X - (part.Size.X / 2))
+                if (part.Position.X < _camera.Position.X - (part.Size.X / 2))
                 {
                     Sprite furthest = Parts.OrderByDescending(x => x.Position.X).First();
                     part.PhysicsBody.Position = new Vector2(furthest.Position.X + part.Size.X, part.Position.Y) * Physics.UPP;

@@ -10,7 +10,7 @@ namespace FlappyBot
 {
     public class TubePlacer : BaseObject
     {
-        public float OffsetX => 300.0f;
+        public float OffsetX => 280.0f;
         public float GapSize => 70.0f;
 
         private Camera2D _camera;
@@ -18,7 +18,8 @@ namespace FlappyBot
         private Random _rand;
         private int _drawOrder;
 
-        private List<Tube> _tubes = new List<Tube>();
+        private List<KeyValuePair<Tube, Tube>> _tubes = new List<KeyValuePair<Tube, Tube>>();
+        public IEnumerable<KeyValuePair<Tube, Tube>> Tubes => _tubes;
 
         public TubePlacer(int drawOrder) 
             : base()
@@ -37,9 +38,10 @@ namespace FlappyBot
 
             for (int i = _tubes.Count - 1; i >= 0; i--)
             {
-                if(_tubes[i].Position.X < _camera.Position.X - _tubes[i].Size.X / 2)
+                if(_tubes[i].Key.Position.X < _camera.Position.X - _tubes[i].Key.Size.X / 2)
                 {
-                    _tubes[i].Destroy();
+                    _tubes[i].Key.Destroy();
+                    _tubes[i].Value.Destroy();
                     _tubes.RemoveAt(i);
                 }
             }
@@ -61,9 +63,7 @@ namespace FlappyBot
             upTube.EnablePhysicsRectangle(FarseerPhysics.Dynamics.BodyType.Static, upTube.Bounds);
             upTube.PhysicsBody.IsSensor = true;
 
-            _tubes.Add(downTube);
-            _tubes.Add(upTube);
-
+            _tubes.Add(new KeyValuePair<Tube, Tube>(downTube, upTube));
             _lastTubeX = downTube.Position.X;
         }
     }

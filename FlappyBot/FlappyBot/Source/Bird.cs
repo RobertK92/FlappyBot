@@ -8,12 +8,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace FlappyBot
 {
     public class Bird : AnimatedSprite
     {
-        public float HorizontalSpeed => 3.0f;
+        public float HorizontalSpeed => 3.5f; 
         public float FlapForce => 200.0f;
         public float GravityScale => 2.0f; 
         public float OffsetX => (Constants.Resolution.X / 2) - 75;
@@ -21,19 +22,29 @@ namespace FlappyBot
 
         public bool IsAlive { get; private set; }
 
+        public event Action OnTubePast = delegate { };
+
         private MouseState _prevMouseState;
 
+        private TubePlacer _tubePlacer;
         private SoundEffect _sfxFlap;
         private SoundEffect _sfxPling;
         private SoundEffect _sfxDeath;
         private SoundEffect _sfxDeathShort;
+        private Sprite _flash;
+        private Camera2D _camera;
+
+        private List<Tube> _pastDownTubes;
 
         public Bird() : base(Constants.FlappySpriteSheet)
         {
+            _camera = Game1.Instance.LoadedScene.ActiveCamera;
+            _pastDownTubes = new List<Tube>();
             _sfxFlap = Content.Load<SoundEffect>(Constants.SoundEffects.SfxFlap);
             _sfxPling = Content.Load<SoundEffect>(Constants.SoundEffects.SfxPling);
             _sfxDeath = Content.Load<SoundEffect>(Constants.SoundEffects.SfxDeath);
             _sfxDeathShort = Content.Load<SoundEffect>(Constants.SoundEffects.SfxDeathShort);
+            _tubePlacer = Game1.Instance.LoadedScene.GetObject<TubePlacer>();
 
             Scale = Vector2.One * Constants.Scale;
             Animations.Add("Flap", new KeyFrame[]
@@ -51,6 +62,17 @@ namespace FlappyBot
             PhysicsBody.GravityScale = GravityScale;
             PhysicsBody.LinearVelocity = new Vector2(HorizontalSpeed, 0.0f);
             IsAlive = true;
+
+            Texture2D flashTexture = new Texture2D(
+                    Game1.Instance.GraphicsDevice, (int)Constants.Resolution.X, (int)Constants.Resolution.Y, false, SurfaceFormat.Color);
+            Color[] colorData = Enumerable.Range(0, (int)Constants.Resolution.X * (int)Constants.Resolution.Y).Select(i => Color.White).ToArray();
+            flashTexture.SetData<Color>(colorData);
+            _flash = new Sprite(flashTexture);
+            _flash.Position = new Vector2(_flash.Size.X / 2, _flash.Size.Y / 2);
+            _flash.DrawingSpace = DrawingSpace.Screen;
+            _flash.Opacity = 0.0f;
+
+            
         }
         
         public void Flap()
@@ -75,6 +97,7 @@ namespace FlappyBot
                 {
                     _sfxDeath.Play();
                 }
+                _flash.Opacity = 1.0f;
             }
         }
 
@@ -82,6 +105,7 @@ namespace FlappyBot
         {
             base.Update(gameTime);
 
+            /* Input */
             if (IsAlive)
             {
                 if (Mouse.GetState().LeftButton == ButtonState.Pressed && _prevMouseState.LeftButton == ButtonState.Released)
@@ -90,17 +114,37 @@ namespace FlappyBot
                 }
             }
 
+            /* Score check */
+            foreach(KeyValuePair<Tube,Tube> kvp in _tubePlacer.Tubes)
+            {
+                if(Position.X > kvp.Key.Position.X && !_pastDownTubes.Contains(kvp.Key))
+                {
+                    _sfxPling.Play();
+                    _pastDownTubes.Add(kvp.Key);
+                    OnTubePast();
+                }
+            }
+
+            _pastDownTubes.RemoveAll(x => x == null || x.Destroying);
+            
             /* No more cheating! */
             if(Position.Y < 0.0f)
             {
                 Kill();
             }
+
+            if(_flash.Opacity > 0.0f)
+            {
+                _flash.Opacity = MathHelper.Clamp(_flash.Opacity - Time.DeltaTime, 0.0f, 1.0f);
+            }
             
             _prevMouseState = Mouse.GetState();
+            _camera.Position = new Vector2(Position.X - OffsetX, _camera.Position.Y);
         }
-
+        
         protected override void FixedUpdate()
         {
+            
             if (PhysicsBody.LinearVelocity.Y != 0.0f)
             {
                 PhysicsBody.Rotation = PhysicsBody.LinearVelocity.Y * RotateIntensity * Physics.UPP;
@@ -114,7 +158,9 @@ namespace FlappyBot
 
         protected override void OnContactSensor(ContactInfo contact)
         {
+#if !DEBUG
             Kill();
+#endif
         }
     }
 }

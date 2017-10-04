@@ -13,6 +13,22 @@ namespace FlappyBot
         public static float Scale => Resolution.Y / SpriteRects.Background.Height;
         public static string FlappySpriteSheet => "flappy-sprites";
 
+        public static class EnvironmentVars
+        {
+            public static string AngleToNextGap => "AngleToNextGap";
+            public static string DistanceToNextGap => "DistanceToNextGap";
+        }
+
+        public static class Fonts
+        {
+            public static string FlappyFont => "bird-font";
+        }
+
+        public static class Effects
+        {
+            public static string FlappyFontEffect => "bird-font-effect";
+        }
+
         public static class SpriteRects
         {    
             public static Rectangle Background => new Rectangle(0, 0, 143, 255);

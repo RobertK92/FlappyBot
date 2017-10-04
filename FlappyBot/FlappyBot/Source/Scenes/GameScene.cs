@@ -12,24 +12,65 @@ namespace FlappyBot.Scenes
     public class GameScene : Scene
     {
         private Bird _bird;
-
-        public override void Load()
+        private Vector2 _nextGap;
+        private TubePlacer _tubes;
+        
+        protected override void Load()
         {
             Log.Message(string.Format("Scale: {0}", Constants.Scale));
 
-
-            BackgroundPlacer background = new BackgroundPlacer(-3);
-            PlatformPlacer platforms = new PlatformPlacer(-1);
-            TubePlacer tubes = new TubePlacer(-2);
-
+            new BackgroundPlacer(-3);
+            new PlatformPlacer(-1);
+            _tubes = new TubePlacer(-2);
+            new UICanvas();
             _bird = new Bird();
+
             
+            AI.Environment environment = new AI.Environment();
+            environment.AddVar<float>(Constants.EnvironmentVars.AngleToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetAngleToNextGap)));
+            environment.AddVar<float>(Constants.EnvironmentVars.DistanceToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetDistanceToNextGap)));
+
+            AI.Learner learner = new AI.Learner(environment);
+            
+        }
+        
+        private float GetAngleToNextGap()
+        {
+            return MathHelper.ToDegrees((float)Math.Atan2(_nextGap.Y - _bird.Bounds.Center.Y, _nextGap.X - _bird.Bounds.Center.X));
+        }
+
+        private float GetDistanceToNextGap()
+        {
+            return Vector2.Distance(_bird.Position, _nextGap);
+        }
+
+        private void UpdateNextGap()
+        {
+            float closest = float.PositiveInfinity;
+            foreach (KeyValuePair<Tube, Tube> tubePair in _tubes.Tubes)
+            {
+                Vector2 gap = new Vector2(
+                        (tubePair.Key.Bounds.Center.X),
+                        (tubePair.Key.Bounds.Center.Y + tubePair.Key.Size.Y / 2) + _tubes.GapSize);
+                float d = Vector2.Distance(_bird.Position, gap);
+
+                if (d < closest && _bird.Bounds.Center.X < gap.X)
+                {
+                    closest = d;
+                    _nextGap = gap;    
+                }
+            }
+        }
+
+        public override void DebugDraw(DebugDrawer drawer)
+        {
+            drawer.DrawCircle(_nextGap, 12.0f, Color.Red);
         }
 
         public override void Update(GameTime gameTime)
         {
-            ActiveCamera.Position = new Vector2(_bird.Position.X - _bird.OffsetX, ActiveCamera.Position.Y);
-
+            UpdateNextGap();
+            
             if (!_bird.IsAlive)
             {
                 if (Keyboard.GetState().IsKeyPressedOnce(Keys.Enter))
@@ -38,5 +79,6 @@ namespace FlappyBot.Scenes
                 }
             }
         }
+        
     }
 }

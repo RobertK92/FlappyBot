@@ -4,13 +4,14 @@ using Microsoft.Xna.Framework.Input;
 using MonoGameToolkit;
 using System.Diagnostics;
 
+
 namespace FlappyBot
 {
     public class Game1 : MGTK
     {
         public override string DefaultTexture => "default-texture";
         public override string DefaultFont => "consolas12";
-
+        
         protected override void LoadContent()
         {
             base.LoadContent();
@@ -26,15 +27,20 @@ namespace FlappyBot
 
         protected override void Update(GameTime gameTime)
         {
-            base.Update(gameTime);
-
 #if DEBUG
             /* temp kill process on escape */
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 Process.GetCurrentProcess().Kill();
             }
+
+            if(Keyboard.GetState().IsKeyPressedOnce(Keys.Tab))
+            {
+                DebugPhysicsViewEnabled = !DebugPhysicsViewEnabled;
+                DebugDrawEnabled = !DebugDrawEnabled;
+            }
 #endif
+            base.Update(gameTime);
         }
     }
 }
