@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 using MonoGameToolkit;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace FlappyBot.Scenes
 {
     public class GameScene : Scene
     {
+        
         private Bird _bird;
         private Vector2 _nextGap;
         private TubePlacer _tubes;
@@ -25,13 +28,32 @@ namespace FlappyBot.Scenes
             new UICanvas();
             _bird = new Bird();
 
-            
-            AI.Environment environment = new AI.Environment();
-            environment.AddVar<float>(Constants.EnvironmentVars.AngleToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetAngleToNextGap)));
-            environment.AddVar<float>(Constants.EnvironmentVars.DistanceToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetDistanceToNextGap)));
+            AI.Environment.ClearVars();
+            AI.Environment.AddVar<float>(Constants.EnvironmentVars.AngleToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetAngleToNextGap)));
+            AI.Environment.AddVar<float>(Constants.EnvironmentVars.DistanceToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetDistanceToNextGap)));
 
-            AI.Learner learner = new AI.Learner(environment);
-            
+            AI.Learner learner = new AI.Learner()
+            {
+                GenerationSize = 6
+            };
+            learner.InputAction = _bird.Flap;
+            learner.Start();
+
+            _bird.OnKilled += () =>
+            {
+                if(AI.Learner.CurrentSample != null)
+                {
+                    AI.Learner.CurrentSample.MaxDistance *= 0.75f;
+                }
+
+                if (AI.Learner.TrainingData.Count > 0)
+                {
+                    AI.Learner.TrainingData.RemoveAt(AI.Learner.TrainingData.Count - 1);
+                }
+
+                learner.Stop();
+                Game1.Instance.LoadScene<GameScene>();
+            };
         }
         
         private float GetAngleToNextGap()

@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Audio;
 using FarseerPhysics.Dynamics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections;
 
 namespace FlappyBot
 {
@@ -23,6 +24,7 @@ namespace FlappyBot
         public bool IsAlive { get; private set; }
 
         public event Action OnTubePast = delegate { };
+        public event Action OnKilled = delegate { };
 
         private MouseState _prevMouseState;
 
@@ -74,12 +76,23 @@ namespace FlappyBot
 
             
         }
-        
+
+        static float bestX = 0.0f;
+        protected override void DebugDraw(DebugDrawer drawer)
+        {
+            if (Position.X > bestX)
+                bestX = Position.X;
+            drawer.DrawLine(new Vector2(bestX, 0.0f), new Vector2(bestX, Constants.Resolution.Y), Color.Green);
+        }
+
         public void Flap()
         {
-            PhysicsBody.LinearVelocity = new Vector2(PhysicsBody.LinearVelocity.X, 0.0f);
-            PhysicsBody.ApplyForce(-Vector2.UnitY * FlapForce * PhysicsBody.GravityScale);
-            _sfxFlap.Play();
+            if (IsAlive)
+            {
+                PhysicsBody.LinearVelocity = new Vector2(PhysicsBody.LinearVelocity.X, 0.0f);
+                PhysicsBody.ApplyForce(-Vector2.UnitY * FlapForce * PhysicsBody.GravityScale);
+                _sfxFlap.Play();
+            }
         }
 
         public void Kill()
@@ -98,8 +111,12 @@ namespace FlappyBot
                     _sfxDeath.Play();
                 }
                 _flash.Opacity = 1.0f;
+                Log.Message("Bird died");
+                OnKilled();
             }
         }
+
+        
 
         protected override void Update(GameTime gameTime)
         {
@@ -127,7 +144,6 @@ namespace FlappyBot
 
             _pastDownTubes.RemoveAll(x => x == null || x.Destroying);
             
-            /* No more cheating! */
             if(Position.Y < 0.0f)
             {
                 Kill();
@@ -158,7 +174,7 @@ namespace FlappyBot
 
         protected override void OnContactSensor(ContactInfo contact)
         {
-#if !DEBUG
+#if !CHEATING
             Kill();
 #endif
         }

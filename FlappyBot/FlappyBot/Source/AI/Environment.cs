@@ -7,28 +7,28 @@ using System.Threading.Tasks;
 
 namespace FlappyBot.AI
 {
-    public class Environment 
+    public static class Environment 
     {
-        private Dictionary<string, object> varMap = new Dictionary<string, object>();
-
-        public Environment()
+        internal static Dictionary<string, object> Vars { get; private set; } = new Dictionary<string, object>();
+        
+        public static void ClearVars()
         {
-            
+            Vars.Clear();
         }
 
-        public void AddVar<T>(string name, EnvironmentVar<T> var)
+        public static void AddVar<T>(string name, EnvironmentVar<T> var)
         {
-            varMap.Add(name, var);
+            Vars.Add(name, var);
         }
 
-        public EnvironmentVar<T> GetVar<T>(string name)
+        public static EnvironmentVar<T> GetVar<T>(string name)
         {
-            if (!varMap.ContainsKey(name))
+            if (!Vars.ContainsKey(name))
             {
                 throw new ArgumentException(string.Format("No EnvironmentVar found with name '{0}'", name));
             }
 
-            object var = varMap[name];
+            object var = Vars[name];
 
             if(var.GetType() != typeof(EnvironmentVar<T>))
             {

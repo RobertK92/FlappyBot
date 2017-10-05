@@ -23,6 +23,10 @@ namespace FlappyBot.AI
             return getter();
         }
 
-        
+        public object GetValueRaw()
+        {
+            return getter();
+        }
+
     }
 }
