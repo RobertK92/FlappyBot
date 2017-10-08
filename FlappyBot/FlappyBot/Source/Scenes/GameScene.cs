@@ -8,12 +8,14 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System.IO;
 using System.Xml.Serialization;
+using MachineLearning;
 
 namespace FlappyBot.Scenes
 {
     public class GameScene : Scene
     {
-        
+        static bool brainInitialized = false;
+
         private Bird _bird;
         private Vector2 _nextGap;
         private TubePlacer _tubes;
@@ -27,43 +29,37 @@ namespace FlappyBot.Scenes
             _tubes = new TubePlacer(-2);
             new UICanvas();
             _bird = new Bird();
-
-            AI.Environment.ClearVars();
-            AI.Environment.AddVar<float>(Constants.EnvironmentVars.AngleToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetAngleToNextGap)));
-            AI.Environment.AddVar<float>(Constants.EnvironmentVars.DistanceToNextGap, new AI.EnvironmentVar<float>(new AI.EnvironmentVar<float>.Getter(GetDistanceToNextGap)));
-
-            AI.Learner learner = new AI.Learner()
+            
+            if (!brainInitialized)
             {
-                GenerationSize = 6
-            };
-            learner.InputAction = _bird.Flap;
-            learner.Start();
+                MDomain domain = new MDomain();
+                domain.AddVariable(new MDomainVar(new MDomainVar.MValuesDelegate(GetAngleToNextGap)));
+                domain.AddVariable(new MDomainVar(new MDomainVar.MValuesDelegate(GetDistanceToNextGap)));
+                MBrain.Instance.RegisterDomain(domain);
 
-            _bird.OnKilled += () =>
-            {
-                if(AI.Learner.CurrentSample != null)
-                {
-                    AI.Learner.CurrentSample.MaxDistance *= 0.75f;
-                }
+                MLearner learner = new MLearner();
+                learner.AddInputAction(new MInputAction("Flap", new MInputAction.MInputActionDelegate(_bird.Flap))); // BUG: bird is re-created each run
+                MBrain.Instance.RegisterLearner(learner);
 
-                if (AI.Learner.TrainingData.Count > 0)
-                {
-                    AI.Learner.TrainingData.RemoveAt(AI.Learner.TrainingData.Count - 1);
-                }
+                MBrain.Instance.StartPulsing();
+                brainInitialized = true;
+                Log.Message("[MBrain] initialized");
+                Log.Message("[MBrain] domain count: " + MBrain.Instance.DomainCount);
+                Log.Message("[MBrain] learner count: " + MBrain.Instance.LearnerCount);
+                Log.Message("[MBrain] started pulsing...");
+            }
 
-                learner.Stop();
-                Game1.Instance.LoadScene<GameScene>();
-            };
+            
         }
         
-        private float GetAngleToNextGap()
+        private IEnumerable<float> GetAngleToNextGap()
         {
-            return MathHelper.ToDegrees((float)Math.Atan2(_nextGap.Y - _bird.Bounds.Center.Y, _nextGap.X - _bird.Bounds.Center.X));
+            return new float[] { MathHelper.ToDegrees((float)Math.Atan2(_nextGap.Y - _bird.Bounds.Center.Y, _nextGap.X - _bird.Bounds.Center.X)) };
         }
 
-        private float GetDistanceToNextGap()
+        private IEnumerable<float> GetDistanceToNextGap()
         {
-            return Vector2.Distance(_bird.Position, _nextGap);
+            return new float[] { Vector2.Distance(_bird.Position, _nextGap) };
         }
 
         private void UpdateNextGap()

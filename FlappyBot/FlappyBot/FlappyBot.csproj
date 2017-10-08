@@ -59,12 +59,6 @@
     <Compile Include="Game1.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Source\AI\Environment.cs" />
-    <Compile Include="Source\AI\EnvironmentVar.cs" />
-    <Compile Include="Source\AI\Learner.cs" />
-    <Compile Include="Source\AI\Policy.cs" />
-    <Compile Include="Source\AI\Sample.cs" />
-    <Compile Include="Source\AI\SerializedTrainingData.cs" />
     <Compile Include="Source\BackgroundPlacer.cs" />
     <Compile Include="Source\PlatformPlacer.cs" />
     <Compile Include="Source\Bird.cs" />
@@ -144,6 +138,10 @@
     <ProjectReference Include="..\..\MonoGameToolkit\MonoGameToolkit.csproj">
       <Project>{56b8c148-3983-40ca-b2ff-6980b3228bc1}</Project>
       <Name>MonoGameToolkit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MachineLearning\MachineLearning.csproj">
+      <Project>{1d656921-8a1f-4a9c-9cc3-e0ec75f70686}</Project>
+      <Name>MachineLearning</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
